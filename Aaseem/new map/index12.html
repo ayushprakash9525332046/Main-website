@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Location with Safe Places and Shelters</title>
+    <style>
+      /* Basic Styles */
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Modal Styles */
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .modal button {
+        padding: 10px 20px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+
+      .modal button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Real-Time Location and Nearest Safe Place or Shelter</h3>
+
+    <!-- Map Container -->
+    <div id="map-container">
+      <iframe
+        id="map"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=0%2C0%2C0%2C0&layer=mapnik&marker=0%2C0"
+        style="border: 1px solid black"
+      ></iframe>
+    </div>
+
+    <!-- Status and Result Display -->
+    <p id="status">Finding your location...</p>
+    <p id="safePlace"></p>
+    <p id="shelterPlace"></p>
+    <p id="placeName"></p>
+
+    <!-- Pop-up Modal -->
+    <div id="locationModal" class="modal">
+      <div class="modal-content">
+        <h2>Location Permission Required</h2>
+        <p>To find nearby shelters and safe places, please enable location services.</p>
+        <button id="enableLocationBtn">Enable Location</button>
+      </div>
+    </div>
+
+    <script>
+      // Safe Places & Shelters Data
+      const safePlaces = [
+        { name: 'Hospital', lat: 30.3502, lon: 77.8911 },
+        { name: 'Police Station', lat: 30.3436, lon: 77.9367 },
+        { name: 'Fire Station', lat: 28.9605, lon: 77.6385 },
+      ];
+
+      const shelters = [
+        { name: 'Community Shelter 1', lat: 30.3502, lon: 77.8911 },
+        { name: 'Community Shelter 2', lat: 30.3436, lon: 77.9367 },
+        { name: 'Community Shelter 3', lat: 28.9605, lon: 77.6385 },
+      ];
+
+      // Show the modal for location permission request
+      const modal = document.getElementById('locationModal');
+      const enableLocationBtn = document.getElementById('enableLocationBtn');
+      modal.style.display = 'flex'; // Show the modal
+
+      // When user clicks the button, request location
+      enableLocationBtn.addEventListener('click', function () {
+        modal.style.display = 'none'; // Hide the modal
+
+        // Check for geolocation support and request user's location
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(
+            function (position) {
+              const latitude = position.coords.latitude;
+              const longitude = position.coords.longitude;
+
+              // Display user's location
+              document.getElementById('status').innerText = `Your location: (${latitude}, ${longitude})`;
+
+              // Update the map with the user's location
+              updateMap(latitude, longitude);
+            },
+            function (error) {
+              alert('Error: Unable to retrieve your location.');
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+          );
+        } else {
+          alert('Geolocation is not supported by your browser.');
+        }
+      });
+
+      // Function to update the map
+      function updateMap(latitude, longitude) {
+        const zoomAdjustment = 0.005;
+
+        const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${
+          longitude - zoomAdjustment
+        }%2C${latitude - zoomAdjustment}%2C${longitude + zoomAdjustment}%2C${latitude + zoomAdjustment}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+
+        document.getElementById('map').src = osmUrl;
+
+        const nearestShelter = findNearestPlace(latitude, longitude, shelters);
+        if (nearestShelter) {
+          document.getElementById('shelterPlace').innerText = `Nearest Shelter: ${nearestShelter.name} (${nearestShelter.lat.toFixed(5)}, ${nearestShelter.lon.toFixed(5)})`;
+        }
+
+        const placeName = findPlaceByLatLon(latitude, longitude, shelters.concat(safePlaces));
+        document.getElementById('placeName').innerText = `Given Location Name: ${placeName}`;
+      }
+
+      // Function to find the nearest place
+      function findNearestPlace(userLat, userLon, places) {
+        let nearestPlace = null;
+        let shortestDistance = Infinity;
+
+        places.forEach((place) => {
+          const distance = calculateDistance(userLat, userLon, place.lat, place.lon);
+          if (distance < shortestDistance) {
+            shortestDistance = distance;
+            nearestPlace = place;
+          }
+        });
+
+        return nearestPlace;
+      }
+
+      // Function to find place by latitude and longitude
+      function findPlaceByLatLon(lat, lon, places) {
+        for (let i = 0; i < places.length; i++) {
+          if (places[i].lat.toFixed(5) === lat.toFixed(5) && places[i].lon.toFixed(5) === lon.toFixed(5)) {
+            return places[i].name;
+          }
+        }
+        return 'Graphic Era Institute of Medical Science';
+      }
+
+      // Function to calculate distance using Haversine formula
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3;
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+        const a =
+          Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+          Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; 
+      }
+    </script>
+  </body>
+</html>
