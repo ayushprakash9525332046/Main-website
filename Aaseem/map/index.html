@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Real-Time Location with Safe Places and Shelters</title>
     <style>
-      /* Basic Styles */
+      
       #map {
         height: 500px;
         width: 100%;
@@ -18,10 +18,10 @@
     </style>
   </head>
   <body>
-    <!-- Title -->
+    
     <h3>Real-Time Location and Nearest Safe Place or Shelter</h3>
     
-    <!-- Map Container -->
+    
     <div id="map-container">
       <iframe
         id="map"
@@ -34,12 +34,11 @@
     <p id="status">Finding your location...</p>
     <p id="safePlace"></p>
     <p id="shelterPlace"></p>
-    <p id="placeName"></p> <!-- Display the name of a place based on given lat/lon -->
+    <p id="placeName"></p> 
 
     <script>
-      // ------------------------------------
-      // Predefined Data: Safe Places & Shelters
-      // ------------------------------------
+       
+      
       const safePlaces = [
         { name: 'Hospital', lat: 30.3502, lon: 77.8911 }, 
         { name: 'Police Station', lat: 30.3436, lon: 77.9367 }, 
@@ -52,13 +51,12 @@
         { name: 'Community Shelter 3', lat: 28.9605, lon: 77.6385 }
       ];
 
-      // ------------------------------------
-      // Function to Update the Map
-      // ------------------------------------
+      
+       
       function updateMap(latitude, longitude) {
-        const zoomAdjustment = 0.005; // Set the zoom level (smaller value = zoom in)
+        const zoomAdjustment = 0.005;  
         
-        // Build the URL for the OpenStreetMap embed
+        
         const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${
           longitude - zoomAdjustment
         }%2C${latitude - zoomAdjustment}%2C${longitude + zoomAdjustment}%2C${latitude + zoomAdjustment}&layer=mapnik&marker=${latitude}%2C${longitude}`;
@@ -66,25 +64,23 @@
         // Update the map source
         document.getElementById('map').src = osmUrl;
 
-        // Find and display nearest shelter
+        
         const nearestShelter = findNearestPlace(latitude, longitude, shelters);
         if (nearestShelter) {
           document.getElementById('shelterPlace').innerText = `Nearest Shelter: ${nearestShelter.name} (${nearestShelter.lat.toFixed(5)}, ${nearestShelter.lon.toFixed(5)})`;
         }
 
-        // Find and display the name of the place based on the given lat/lon
+        
         const placeName = findPlaceByLatLon(latitude, longitude, shelters.concat(safePlaces)); // Combine both arrays
         document.getElementById('placeName').innerText = `Given Location Name: ${placeName}`;
       }
 
-      // ------------------------------------
-      // Function to Find Nearest Place
-      // ------------------------------------
+       
       function findNearestPlace(userLat, userLon, places) {
         let nearestPlace = null;
         let shortestDistance = Infinity;
 
-        // Loop through all places to find the nearest one
+ 
         places.forEach((place) => {
           const distance = calculateDistance(userLat, userLon, place.lat, place.lon);
           if (distance < shortestDistance) {
@@ -93,27 +89,25 @@
           }
         });
 
-        return nearestPlace; // Return the nearest place
+        return nearestPlace; 
       }
 
-      // ------------------------------------
-      // Function to Find Place by Lat/Lon
-      // ------------------------------------
+    
       function findPlaceByLatLon(lat, lon, places) {
-        // Loop through all places to find a matching latitude and longitude
+        
         for (let i = 0; i < places.length; i++) {
           if (places[i].lat.toFixed(5) === lat.toFixed(5) && places[i].lon.toFixed(5) === lon.toFixed(5)) {
             return places[i].name;
           }
         }
-        return 'Graphic era institue of medical science'; // Return default if no place is found
+        return 'Graphic era institue of medical science';  
       }
 
-      // ------------------------------------
-      // Function to Calculate Distance between Two Coordinates
-      // ------------------------------------
+      
+    
+      
       function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; // Earth's radius in meters
+        const R = 6371e3; 
         const φ1 = (lat1 * Math.PI) / 180;
         const φ2 = (lat2 * Math.PI) / 180;
         const Δφ = ((lat2 - lat1) * Math.PI) / 180;
@@ -125,22 +119,18 @@
           Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return R * c; // Distance in meters
+        return R * c; 
       }
-
-      // ------------------------------------
-      // Geolocation Watch: Find User's Position
-      // ------------------------------------
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
           function (position) {
             const latitude = position.coords.latitude;
             const longitude = position.coords.longitude;
 
-            // Display user's current location
+            
             document.getElementById('status').innerText = `Your location: (${latitude}, ${longitude})`;
 
-            // Update map and nearby places
+             
             updateMap(latitude, longitude);
           },
           function (error) {
